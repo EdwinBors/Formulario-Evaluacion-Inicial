@@ -448,6 +448,12 @@
 
   ::-webkit-scrollbar{ width:6px; }
   ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:3px; }
+
+  @media print{
+    #resultsActions{ display:none; }
+    body{ background:#fff; color:#000; }
+    .content h3{ color:#000 !important; }
+  }
 </style>
 </head>
 <body>
@@ -986,9 +992,13 @@ function renderOutro(){
       <h1 style="font-size:28px;">Revisa y envíame<br><span class="accent">tus respuestas</span></h1>
       <p class="lede" style="margin-bottom:18px;">Elige la forma más cómoda para hacérmelas llegar. No se envía nada automáticamente.</p>
       ${photosBlock}
+      <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:8px;">
+        <button class="btn btn-primary" id="btnCopyLink">🔗 Copiar enlace con tus respuestas</button>
+        <a class="btn btn-secondary link-btn" id="btnWhatsappLink" href="#" style="flex:1;">💬 Enviar enlace por WhatsApp</a>
+      </div>
+      <div class="field-hint" style="margin-bottom:20px;">El enlace abre tus respuestas ya rellenas, con el mismo diseño del formulario — nadie más puede verlas si no tiene el enlace.</div>
       <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:20px;">
-        <button class="btn btn-primary" id="btnCopy">📋 Copiar resumen</button>
-        <a class="btn btn-secondary link-btn" id="btnWhatsapp" href="#" style="flex:1;">💬 Enviar por WhatsApp</a>
+        <button class="btn btn-secondary" id="btnCopy">📋 Copiar como texto</button>
         <a class="btn btn-secondary link-btn" id="btnEmail" href="#" style="flex:1;">✉️ Enviar por email</a>
       </div>
       <div class="summary-box" id="summaryBox"></div>
@@ -1007,7 +1017,22 @@ const TU_TELEFONO = '34640648420'; // formato internacional sin '+' ni espacios
 
 function attachOutroHandlers(){
   const text = summaryText();
+  const link = buildResultsLink();
   document.getElementById('summaryBox').textContent = text;
+
+  document.getElementById('btnCopyLink').addEventListener('click', () => {
+    navigator.clipboard.writeText(link).then(() => {
+      const t = document.getElementById('toast');
+      t.textContent = 'Enlace copiado';
+      t.classList.add('show');
+      setTimeout(()=>{ t.classList.remove('show'); t.textContent = 'Copiado al portapapeles'; }, 2200);
+    }).catch(() => {
+      alert('No se pudo copiar automáticamente. Enlace:\n\n' + link);
+    });
+  });
+
+  document.getElementById('btnWhatsappLink').href =
+    'https://wa.me/' + TU_TELEFONO + '?text=' + encodeURIComponent('Aquí tienes mi formulario inicial completado: ' + link);
 
   document.getElementById('btnCopy').addEventListener('click', () => {
     navigator.clipboard.writeText(text).then(() => {
@@ -1019,8 +1044,6 @@ function attachOutroHandlers(){
     });
   });
 
-  document.getElementById('btnWhatsapp').href =
-    'https://wa.me/' + TU_TELEFONO + '?text=' + encodeURIComponent(text);
   document.getElementById('btnEmail').href =
     'mailto:' + TU_EMAIL + '?subject=' + encodeURIComponent('Formulario inicial - ' + (data.nombre||'')) +
     '&body=' + encodeURIComponent(text);
@@ -1055,7 +1078,90 @@ function attachOutroHandlers(){
   });
 }
 
-render();
+/* =========================================================
+   RESULTS VIEW (read-only, reached via a shareable link)
+   ========================================================= */
+function buildResultsLink(){
+  const payload = Object.assign({}, data, { _fecha: new Date().toLocaleString('es-ES') });
+  const encoded = encodeURIComponent(JSON.stringify(payload));
+  return location.origin + location.pathname + '#r=' + encoded;
+}
+
+function renderResultsView(resultData){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  const wrap = el(`<div></div>`);
+
+  const header = el(`
+    <div class="content" style="padding-top:32px;">
+      <div class="eyebrow">Asesoría EB</div>
+      <h1 style="font-size:26px;margin-bottom:4px;">Respuestas de<br><span class="accent">${resultData.nombre || 'cliente'}</span></h1>
+      <p class="section-desc" style="margin-bottom:22px;">
+        Contacto: ${resultData.contacto || '—'}${resultData._fecha ? ' · Enviado el ' + resultData._fecha : ''}
+      </p>
+      <div class="nav-inner" style="padding:0;gap:8px;margin-bottom:28px;" id="resultsActions">
+        <button class="btn btn-primary" id="btnPrint">🖨️ Guardar como PDF</button>
+      </div>
+    </div>
+  `);
+  wrap.appendChild(header);
+
+  const content = el(`<div class="content" style="padding-top:0;"></div>`);
+
+  SECTIONS.filter(s => !s.showIf || s.showIf(resultData)).forEach(s => {
+    const secBlock = el(`<div style="margin-bottom:30px;"></div>`);
+    secBlock.appendChild(el(`<h3 style="font-size:18px;color:var(--lime);margin-bottom:14px;font-family:'Inter',sans-serif;font-weight:700;">${s.title}</h3>`));
+
+    s.fields.filter(f => !f.showIf || f.showIf(resultData)).forEach(f => {
+      if(f.type === 'photos') return; // las fotos se comparten aparte
+      let v = resultData[f.key];
+      if(Array.isArray(v)) v = v.join(', ');
+      if(v === undefined || v === null || v === '') v = '—';
+      const row = el(`
+        <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+          <div style="font-size:12.5px;color:var(--gray-dim);margin-bottom:3px;">${f.label}</div>
+          <div style="font-size:15px;color:var(--white);font-weight:500;line-height:1.4;">${v}</div>
+        </div>
+      `);
+      secBlock.appendChild(row);
+      if(f.followUp && f.followUp.showWhen.includes(resultData[f.key]) && resultData[f.followUp.key]){
+        secBlock.appendChild(el(`
+          <div style="margin:-8px 0 14px 14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--gray-dim);margin-bottom:3px;">↳ ${f.followUp.label}</div>
+            <div style="font-size:14px;color:var(--gray);">${resultData[f.followUp.key]}</div>
+          </div>
+        `));
+      }
+    });
+    content.appendChild(secBlock);
+  });
+
+  const footer = el(`<div style="text-align:center;padding:20px 0 50px 0;"><a href="${location.origin + location.pathname}" style="color:var(--gray-dim);font-size:13px;">Ir al formulario en blanco →</a></div>`);
+  content.appendChild(footer);
+
+  wrap.appendChild(content);
+  app.appendChild(wrap);
+
+  document.getElementById('btnPrint').addEventListener('click', () => window.print());
+}
+
+function getResultsFromHash(){
+  const h = location.hash;
+  if(h && h.indexOf('#r=') === 0){
+    try{
+      return JSON.parse(decodeURIComponent(h.slice(3)));
+    }catch(e){ return null; }
+  }
+  return null;
+}
+
+const incomingResults = getResultsFromHash();
+if(incomingResults){
+  renderResultsView(incomingResults);
+} else {
+  render();
+}
 })();
 </script>
 </body>
