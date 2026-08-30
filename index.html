@@ -1055,7 +1055,7 @@ function attachOutroHandlers(){
 
   if(files.length > 0){
     noteEl.textContent = canShareFiles
-      ? 'Se abrirá el menú para compartir con tus fotos y el enlace. Elige WhatsApp y listo.'
+      ? 'Se abrirá el menú para compartir tus fotos junto al enlace. Si falla o WhatsApp no aparece, se abrirá igualmente con el enlace — solo tendrás que adjuntar las fotos a mano en el chat.'
       : 'Tu navegador no permite adjuntar fotos aquí: se abrirá WhatsApp con el enlace, y las fotos guárdalas y adjúntalas a mano en el mismo chat.';
   } else {
     noteEl.textContent = '';
@@ -1071,7 +1071,7 @@ function attachOutroHandlers(){
         // si falla el share nativo, seguimos con el fallback de abajo
       }
     }
-    window.open(waFallbackHref, '_blank');
+    location.href = waFallbackHref;
   });
 
   document.getElementById('btnEdit').addEventListener('click', () => {
