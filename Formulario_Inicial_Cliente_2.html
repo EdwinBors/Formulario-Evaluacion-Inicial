@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Formulario inicial · Asesoría EB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D0D0D;
+    --card:#1A1A1A;
+    --card-2:#151515;
+    --border:#2A2A2A;
+    --lime:#D4FF3D;
+    --lime-dim:#3A3A00;
+    --white:#FFFFFF;
+    --gray:#A6A6A6;
+    --gray-dim:#6E6E6E;
+    --danger:#FF6B6B;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--white);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  h1,h2,h3{
+    font-family:'Playfair Display',Georgia,serif;
+    font-weight:800;
+    margin:0;
+    line-height:1.15;
+  }
+  /* ---------- Progress ---------- */
+  .progress-wrap{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:var(--bg);
+    padding:14px 20px 10px 20px;
+    border-bottom:1px solid var(--border);
+  }
+  .progress-track{
+    height:5px;
+    border-radius:3px;
+    background:var(--card);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--lime);
+    border-radius:3px;
+    transition:width .35s ease;
+  }
+  .progress-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+    font-size:12px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--gray);
+    font-weight:600;
+  }
+  .progress-label span.step-name{
+    color:var(--lime);
+  }
+  /* ---------- Content ---------- */
+  .content{
+    flex:1;
+    padding:28px 20px 140px 20px;
+  }
+  .eyebrow{
+    color:var(--lime);
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .section-title{
+    font-size:26px;
+    margin-bottom:8px;
+  }
+  .section-desc{
+    color:var(--gray);
+    font-size:14.5px;
+    line-height:1.5;
+    margin-bottom:26px;
+  }
+  .field{
+    margin-bottom:26px;
+  }
+  .field-label{
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:10px;
+    line-height:1.4;
+    display:block;
+  }
+  .field-hint{
+    color:var(--gray-dim);
+    font-size:12.5px;
+    margin-top:6px;
+    line-height:1.4;
+  }
+  .required-mark{ color:var(--lime); margin-left:3px; }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select{
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--border);
+    color:var(--white);
+    font-family:'Inter',sans-serif;
+    font-size:16px;
+    border-radius:12px;
+    padding:13px 14px;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  input:focus, textarea:focus, select:focus{
+    border-color:var(--lime);
+  }
+  textarea{
+    min-height:90px;
+    resize:vertical;
+    line-height:1.5;
+  }
+  .input-with-unit{
+    position:relative;
+  }
+  .input-with-unit input{
+    padding-right:52px;
+  }
+  .unit-label{
+    position:absolute;
+    right:14px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--gray-dim);
+    font-size:13.5px;
+    pointer-events:none;
+  }
+
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .chip{
+    border:1px solid var(--border);
+    background:var(--card);
+    color:var(--white);
+    font-size:14px;
+    font-weight:500;
+    padding:11px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    user-select:none;
+    transition:all .12s ease;
+    line-height:1.3;
+  }
+  .chip:active{ transform:scale(.97); }
+  .chip.selected{
+    background:var(--lime);
+    border-color:var(--lime);
+    color:#0D0D0D;
+    font-weight:700;
+  }
+  .chip.full-width{
+    width:100%;
+    text-align:center;
+  }
+
+  .scale-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .scale-btn{
+    width:44px;
+    height:44px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--card);
+    color:var(--white);
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .scale-btn.selected{
+    background:var(--lime);
+    border-color:var(--lime);
+    color:#0D0D0D;
+  }
+  .scale-caption{
+    display:flex;
+    justify-content:space-between;
+    font-size:11.5px;
+    color:var(--gray-dim);
+    margin-top:6px;
+  }
+
+  .followup{
+    margin-top:12px;
+    padding-left:2px;
+    border-left:2px solid var(--lime-dim);
+    padding-left:14px;
+  }
+
+  /* ---------- Nav buttons ---------- */
+  .nav-bar{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    display:flex;
+    justify-content:center;
+    background:linear-gradient(to top, var(--bg) 60%, transparent);
+    padding:22px 0 18px 0;
+    pointer-events:none;
+  }
+  .nav-inner{
+    width:100%;
+    max-width:480px;
+    display:flex;
+    gap:10px;
+    padding:0 20px;
+    pointer-events:auto;
+  }
+  .btn{
+    flex:1;
+    border:none;
+    border-radius:14px;
+    padding:16px 18px;
+    font-size:15.5px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  .btn-primary{
+    background:var(--lime);
+    color:#0D0D0D;
+  }
+  .btn-primary:active{ transform:scale(.98); }
+  .btn-secondary{
+    background:var(--card);
+    color:var(--white);
+    border:1px solid var(--border);
+    flex:0 0 84px;
+  }
+  .btn:disabled{
+    opacity:.4;
+    cursor:not-allowed;
+  }
+
+  /* ---------- Intro / outro ---------- */
+  .cover{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:40px 26px;
+  }
+  .cover .eyebrow{ text-align:center; }
+  .cover h1{
+    font-size:34px;
+    text-align:center;
+    margin-bottom:16px;
+  }
+  .cover h1 .accent{ color:var(--lime); }
+  .cover p.lede{
+    text-align:center;
+    color:var(--gray);
+    font-size:15.5px;
+    line-height:1.6;
+    margin-bottom:30px;
+  }
+  .info-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:18px 20px;
+    margin-bottom:14px;
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+  }
+  .info-card .icon{
+    font-size:20px;
+    line-height:1;
+    margin-top:1px;
+  }
+  .info-card .txt{ font-size:14px; color:var(--gray); line-height:1.5; }
+  .info-card .txt b{ color:var(--white); }
+
+  .summary-box{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px;
+    font-size:13px;
+    line-height:1.7;
+    color:var(--gray);
+    white-space:pre-wrap;
+    max-height:340px;
+    overflow-y:auto;
+    font-family:'SF Mono',Consolas,monospace;
+  }
+  .summary-box b{ color:var(--white); }
+
+  .toast{
+    position:fixed;
+    bottom:100px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--lime);
+    color:#0D0D0D;
+    font-weight:700;
+    font-size:14px;
+    padding:12px 20px;
+    border-radius:999px;
+    opacity:0;
+    transition:all .25s ease;
+    pointer-events:none;
+    z-index:50;
+    white-space:nowrap;
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
+  a.link-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    text-decoration:none;
+    width:100%;
+  }
+
+  .womansection-badge{
+    display:inline-block;
+    background:var(--lime-dim);
+    color:var(--lime);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.05em;
+    padding:4px 10px;
+    border-radius:999px;
+    margin-bottom:14px;
+  }
+
+  /* ---------- Photos ---------- */
+  .photo-grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .photo-thumb{
+    position:relative;
+    width:84px;
+    height:84px;
+    border-radius:12px;
+    overflow:hidden;
+    border:1px solid var(--border);
+  }
+  .photo-thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .photo-remove{
+    position:absolute;
+    top:4px;
+    right:4px;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    border:none;
+    background:rgba(0,0,0,.65);
+    color:#fff;
+    font-size:12px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .photo-add{
+    width:84px;
+    height:84px;
+    border-radius:12px;
+    border:1px dashed var(--border);
+    background:var(--card);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    cursor:pointer;
+  }
+  .photo-add-icon{
+    font-size:20px;
+    color:var(--lime);
+    line-height:1;
+  }
+  .photo-add-text{
+    font-size:9.5px;
+    color:var(--gray-dim);
+    text-align:center;
+    line-height:1.2;
+    padding:0 4px;
+  }
+  .share-photos-note{
+    font-size:12.5px;
+    color:var(--gray-dim);
+    line-height:1.5;
+    margin-top:10px;
+  }
+
+  ::-webkit-scrollbar{ width:6px; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+
+/* =========================================================
+   FIELD SCHEMA
+   ========================================================= */
+const SECTIONS = [
+  {
+    id: 'personal',
+    eyebrow: 'Antes de empezar',
+    title: 'Datos personales',
+    desc: 'Lo básico para conocerte y adaptar tu plan desde el primer día.',
+    fields: [
+      { key:'nombre', label:'Nombre y apellidos', type:'text', required:true },
+      { key:'contacto', label:'Teléfono o email de contacto', type:'text', required:true },
+      { key:'edad', label:'Edad', type:'number', unit:'años' },
+      { key:'sexo', label:'Sexo', type:'radio', options:['Hombre','Mujer','Otro','Prefiero no decirlo'] },
+      { key:'peso_actual', label:'Peso actual', type:'number', unit:'kg' },
+      { key:'peso_objetivo', label:'Peso objetivo / ideal', type:'number', unit:'kg' },
+      { key:'estatura', label:'Estatura', type:'number', unit:'cm' },
+      { key:'medida_cintura', label:'Medida de cintura', type:'number', unit:'cm' },
+      { key:'medida_cadera', label:'Medida de cadera', type:'number', unit:'cm' },
+      { key:'medida_pecho', label:'Medida de pecho', type:'number', unit:'cm' },
+      { key:'medida_brazo', label:'Medida de brazo', type:'number', unit:'cm' },
+      { key:'medida_muslo', label:'Medida de muslo', type:'number', unit:'cm' },
+      { key:'fotos_iniciales', label:'Fotos iniciales (frontal, lateral y espalda)', type:'photos',
+        hint:'Toca para elegir de tu galería o hacer una foto ahora. Al final del formulario podrás compartirlas directamente por WhatsApp.' },
+    ]
+  },
+  {
+    id: 'objetivo',
+    eyebrow: 'Lo que quieres conseguir',
+    title: 'Tu objetivo',
+    desc: '',
+    fields: [
+      { key:'objetivo_principal', label:'Objetivo principal', type:'radio',
+        options:['Perder peso','Ganar masa muscular','Tonificar / definir','Grupo muscular específico','Preparación para carrera o competición','Mejorar salud general','Otro'],
+        followUp:{ key:'objetivo_principal_detalle', label:'Cuéntame un poco más', type:'text', showWhen:['Grupo muscular específico','Preparación para carrera o competición','Otro'] } },
+      { key:'objetivo_secundario', label:'Objetivo secundario (opcional)', type:'multiselect',
+        options:['Perder peso','Ganar masa muscular','Tonificar / definir','Mejorar resistencia','Mejorar salud general','Mejorar movilidad / flexibilidad','Ninguno más'] },
+      { key:'fecha_limite', label:'¿Tienes alguna fecha límite, competición o evento?', type:'yesno',
+        followUp:{ key:'fecha_limite_detalle', label:'¿Cuál y para cuándo?', type:'text', showWhen:['Sí'] } },
+      { key:'buen_resultado', label:'¿Qué sería para ti un buen resultado al terminar el plan?', type:'textarea' },
+      { key:'por_que', label:'¿Por qué quieres conseguir este objetivo?', type:'textarea' },
+    ]
+  },
+  {
+    id: 'actividad',
+    eyebrow: 'Tu punto de partida',
+    title: 'Actividad física y experiencia',
+    desc: '',
+    fields: [
+      { key:'deporte_pasado', label:'¿Has practicado algún deporte antes?', type:'yesno',
+        followUp:{ key:'deporte_pasado_detalle', label:'¿Cuál y durante cuánto tiempo?', type:'text', showWhen:['Sí'] } },
+      { key:'deporte_actual', label:'¿Actualmente haces alguna actividad deportiva?', type:'yesno',
+        followUp:{ key:'deporte_actual_horas', label:'¿Cuántas horas por semana?', type:'number', unit:'h/semana', showWhen:['Sí'] } },
+      { key:'pasos_dia', label:'¿Cuántos pasos haces aproximadamente al día?', type:'radio',
+        options:['Menos de 3.000','3.000 - 6.000','6.000 - 10.000','Más de 10.000','No lo sé'] },
+      { key:'condicion_fisica', label:'¿Cómo valorarías tu condición física actual?', type:'scale', min:1, max:10, capLow:'Muy baja', capHigh:'Excelente' },
+      { key:'experiencia_gym', label:'Experiencia en gimnasios: tiempo y ejercicios que te gustan', type:'textarea' },
+      { key:'plan_anterior', label:'¿Has seguido algún plan de entrenamiento anteriormente?', type:'yesno',
+        followUp:{ key:'plan_anterior_detalle', label:'¿Cuál?', type:'text', showWhen:['Sí'] } },
+      { key:'actividades_gusta', label:'¿Qué actividades te gusta practicar?', type:'multiselect',
+        options:['Montaña / senderismo','Bicicleta','Pádel / tenis','Natación','Running','Fútbol','Otros deportes de equipo','Ninguna en especial'] },
+    ]
+  },
+  {
+    id: 'disponibilidad',
+    eyebrow: 'Para encajar el plan en tu vida',
+    title: 'Disponibilidad y material',
+    desc: '',
+    fields: [
+      { key:'dias_disponibles', label:'¿Cuántos días tienes disponibles para entrenar?', type:'radio',
+        options:['1-2 días','3 días','4 días','5 días','6-7 días'] },
+      { key:'tiempo_sesion', label:'¿Cuánto tiempo tienes disponible por sesión?', type:'radio',
+        options:['30 min','45 min','60 min','90 min o más'] },
+      { key:'gimnasio', label:'¿Estás apuntado/a a algún gimnasio?', type:'yesno',
+        followUp:{ key:'gimnasio_detalle', label:'¿Cuál?', type:'text', showWhen:['Sí'] } },
+      { key:'horarios', label:'¿Qué horarios tienes disponibles para entrenar?', type:'multiselect',
+        options:['Mañana','Mediodía','Tarde','Noche'] },
+    ]
+  },
+  {
+    id: 'preferencias',
+    eyebrow: 'Para que disfrutes entrenando',
+    title: 'Preferencias de entrenamiento',
+    desc: '',
+    fields: [
+      { key:'ejercicios_gustan', label:'¿Qué ejercicios te gustan?', type:'textarea' },
+      { key:'ejercicios_no_gustan', label:'¿Qué ejercicios no te gustan o prefieres evitar?', type:'textarea' },
+      { key:'estilo_entrenamiento', label:'¿Prefieres entrenamientos...?', type:'radio',
+        options:['Cortos e intensos','Largos y moderados','Sin preferencia'] },
+      { key:'mantener_deporte', label:'¿Hay algún deporte o actividad que quieras mantener durante el plan?', type:'yesno',
+        followUp:{ key:'mantener_deporte_detalle', label:'¿Cuál?', type:'text', showWhen:['Sí'] } },
+    ]
+  },
+  {
+    id: 'salud',
+    eyebrow: 'Muy importante para tu seguridad',
+    title: 'Salud y antecedentes',
+    desc: '',
+    fields: [
+      { key:'lesiones', label:'Historial de lesiones', type:'textarea' },
+      { key:'molestia_actual', label:'¿Tienes actualmente alguna molestia muscular o articular?', type:'yesno',
+        followUp:{ key:'molestia_actual_detalle', label:'Cuéntame más', type:'textarea', showWhen:['Sí'] } },
+      { key:'movimiento_molesto', label:'¿Hay algún movimiento o ejercicio que te produzca molestias?', type:'yesno',
+        followUp:{ key:'movimiento_molesto_detalle', label:'¿Cuál?', type:'textarea', showWhen:['Sí'] } },
+      { key:'alergias', label:'Alergias o intolerancias', type:'textarea' },
+      { key:'medicacion', label:'¿Tomas alguna medicación?', type:'yesno',
+        followUp:{ key:'medicacion_detalle', label:'¿Cuál?', type:'textarea', showWhen:['Sí'] } },
+      { key:'salud_otro', label:'¿Hay alguna otra información sobre tu salud que consideres relevante antes de empezar?', type:'textarea' },
+    ]
+  },
+  {
+    id: 'mujer',
+    eyebrow: 'Solo para adaptar mejor tu plan',
+    title: 'En caso de las mujeres',
+    desc: '',
+    showIf: (d) => d.sexo === 'Mujer',
+    fields: [
+      { key:'ciclo_regularidad', label:'Frecuencia y regularidad del ciclo menstrual', type:'radio',
+        options:['Regular','Irregular','Ausente (amenorrea)','Prefiero no decirlo'] },
+      { key:'dolor_menstrual', label:'¿Sufres dolor durante la menstruación?', type:'yesno' },
+      { key:'medicacion_sintomas', label:'¿Tomas medicación para los síntomas?', type:'yesno' },
+      { key:'circunstancia_ciclo', label:'¿Hay alguna circunstancia relacionada con el ciclo que deba tenerse en cuenta para adaptar el entrenamiento?', type:'textarea' },
+    ]
+  },
+  {
+    id: 'estilovida',
+    eyebrow: 'Lo que pasa fuera del gimnasio también importa',
+    title: 'Sueño, trabajo y estilo de vida',
+    desc: '',
+    fields: [
+      { key:'horas_sueno', label:'¿Cuántas horas duermes al día?', type:'radio',
+        options:['Menos de 5h','5-6h','7-8h','Más de 8h'] },
+      { key:'problemas_dormir', label:'¿Tienes problemas para dormir?', type:'yesno' },
+      { key:'despertares', label:'¿Te despiertas a menudo durante la noche?', type:'yesno' },
+      { key:'calidad_sueno', label:'¿Cómo valorarías tu sueño?', type:'scale', min:1, max:10, capLow:'Muy malo', capHigh:'Excelente' },
+      { key:'nivel_estres', label:'¿Cómo valorarías tu nivel de estrés?', type:'scale', min:1, max:10, capLow:'Muy bajo', capHigh:'Muy alto' },
+      { key:'trabaja', label:'¿Trabajas actualmente?', type:'yesno',
+        followUp:{ key:'trabaja_detalle', label:'¿De qué?', type:'text', showWhen:['Sí'] } },
+      { key:'tipo_trabajo', label:'Tu trabajo es principalmente...', type:'radio',
+        options:['Sedentario (sentado)','Activo (de pie / movimiento)','Mixto'] },
+      { key:'esfuerzo_fisico_trabajo', label:'¿Cuánto esfuerzo físico realizas durante el trabajo?', type:'radio',
+        options:['Bajo','Medio','Alto'] },
+      { key:'horario_laboral', label:'¿Qué horario laboral tienes?', type:'text' },
+      { key:'actividad_diaria', label:'Actividad diaria aproximada (fuera del trabajo y el gimnasio)', type:'textarea' },
+    ]
+  },
+  {
+    id: 'alimentacion',
+    eyebrow: 'Para diseñar tu plan de nutrición',
+    title: 'Alimentación',
+    desc: '',
+    fields: [
+      { key:'dieta_anterior', label:'¿Has seguido alguna dieta anteriormente?', type:'yesno',
+        followUp:{ key:'dieta_anterior_cual', label:'¿Cuál?', type:'text', showWhen:['Sí'] } },
+      { key:'dieta_resultado', label:'¿Cómo te fue con ella? ¿Llegaste al objetivo?', type:'textarea', showIf:(d)=>d.dieta_anterior==='Sí' },
+      { key:'come_todo', label:'¿Puedes comer todo tipo de alimentos?', type:'yesno' },
+      { key:'alergias_alimentarias', label:'Alergias o intolerancias alimentarias', type:'textarea' },
+      { key:'platos_favoritos', label:'¿Cuáles son tus platos favoritos?', type:'textarea' },
+      { key:'alimentos_favoritos', label:'¿Cuáles son tus alimentos favoritos?', type:'textarea' },
+      { key:'no_gustan', label:'¿Hay platos o alimentos que no te gusten o no quieras consumir?', type:'textarea' },
+      { key:'num_comidas', label:'¿Cuántas comidas haces normalmente al día?', type:'radio',
+        options:['2','3','4','5','6 o más'] },
+      { key:'horas_comidas', label:'¿A qué horas sueles comer?', type:'text' },
+      { key:'come_fuera', label:'¿Comes habitualmente fuera de casa?', type:'yesno' },
+      { key:'quien_cocina', label:'¿Quién suele cocinar?', type:'radio',
+        options:['Yo','Mi pareja o familiar','Entre varios','Otro'] },
+      { key:'tiempo_cocinar', label:'¿Cuánto tiempo tienes disponible para cocinar?', type:'radio',
+        options:['Poco (rápido y sencillo)','Moderado','Mucho, me gusta cocinar'] },
+      { key:'dia_alimentacion', label:'¿Cómo es un día normal de alimentación? (desayuno, comida, merienda, cena, picoteos y bebidas)', type:'textarea' },
+      { key:'agua_dia', label:'¿Cuánta agua bebes aproximadamente al día?', type:'radio',
+        options:['Menos de 1L','1-2L','2-3L','Más de 3L'] },
+      { key:'alcohol', label:'¿Bebes alcohol?', type:'radio',
+        options:['Nunca','Ocasional (eventos)','1-2 veces por semana','Frecuente'] },
+    ]
+  },
+  {
+    id: 'motivacion',
+    eyebrow: 'Última parte',
+    title: 'Motivación y adherencia',
+    desc: '',
+    fields: [
+      { key:'motivacion', label:'¿Qué te motiva a entrenar o empezar este plan?', type:'textarea' },
+      { key:'forma_vida', label:'¿Quieres que sea una forma de vida o solo durante un tiempo?', type:'radio',
+        options:['Quiero que sea un estilo de vida','Es algo puntual / temporal','Aún no lo sé'] },
+      { key:'dificultades', label:'¿Qué crees que puede dificultar que cumplas el plan?', type:'textarea' },
+      { key:'expectativas', label:'¿Qué esperas de este programa?', type:'textarea' },
+      { key:'info_extra', label:'¿Hay alguna información que creas relevante y no hayamos comentado antes de empezar?', type:'textarea' },
+    ]
+  },
+];
+
+/* =========================================================
+   STATE
+   ========================================================= */
+// step -1 = cover, 0..N-1 = sections, N = outro
+let currentStep = -1;
+const data = {};
+let photoFiles = []; // { file, previewUrl }
+
+function visibleSections(){
+  return SECTIONS.filter(s => !s.showIf || s.showIf(data));
+}
+function visibleFields(section){
+  return section.fields.filter(f => !f.showIf || f.showIf(data));
+}
+
+/* =========================================================
+   RENDER HELPERS
+   ========================================================= */
+function el(html){
+  const t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
+}
+
+function fieldHTML(f){
+  const val = data[f.key];
+  let inner = '';
+
+  if(f.type === 'text' || f.type === 'number' || f.type === 'tel'){
+    const unit = f.unit ? `<span class="unit-label">${f.unit}</span>` : '';
+    inner = `<div class="input-with-unit">
+      <input type="${f.type==='number'?'number':'text'}" data-key="${f.key}" value="${val?String(val).replace(/"/g,'&quot;'):''}" placeholder="Escribe aquí" inputmode="${f.type==='number'?'decimal':'text'}">
+      ${unit}
+    </div>`;
+  } else if(f.type === 'textarea'){
+    inner = `<textarea data-key="${f.key}" placeholder="Escribe aquí">${val?String(val):''}</textarea>`;
+  } else if(f.type === 'radio'){
+    inner = `<div class="chip-row" data-key="${f.key}" data-type="radio">` +
+      f.options.map(o => `<div class="chip${val===o?' selected':''}" data-value="${o.replace(/"/g,'&quot;')}">${o}</div>`).join('') +
+      `</div>`;
+  } else if(f.type === 'yesno'){
+    const opts = ['Sí','No'];
+    inner = `<div class="chip-row" data-key="${f.key}" data-type="radio">` +
+      opts.map(o => `<div class="chip${val===o?' selected':''}" data-value="${o}">${o}</div>`).join('') +
+      `</div>`;
+  } else if(f.type === 'multiselect'){
+    const arr = Array.isArray(val) ? val : [];
+    inner = `<div class="chip-row" data-key="${f.key}" data-type="multi">` +
+      f.options.map(o => `<div class="chip${arr.includes(o)?' selected':''}" data-value="${o.replace(/"/g,'&quot;')}">${o}</div>`).join('') +
+      `</div>`;
+  } else if(f.type === 'scale'){
+    const nums = [];
+    for(let i=f.min;i<=f.max;i++) nums.push(i);
+    inner = `<div class="scale-row" data-key="${f.key}" data-type="scale">` +
+      nums.map(n => `<div class="scale-btn${val===n?' selected':''}" data-value="${n}">${n}</div>`).join('') +
+      `</div>
+      <div class="scale-caption"><span>${f.capLow||''}</span><span>${f.capHigh||''}</span></div>`;
+  } else if(f.type === 'photos'){
+    const thumbs = photoFiles.map((p, i) => `
+      <div class="photo-thumb">
+        <img src="${p.previewUrl}" alt="Foto ${i+1}">
+        <button type="button" class="photo-remove" data-index="${i}">✕</button>
+      </div>`).join('');
+    inner = `
+      <div class="photo-grid">
+        ${thumbs}
+        <label class="photo-add">
+          <input type="file" accept="image/*" multiple id="photoInput" style="display:none">
+          <span class="photo-add-icon">＋</span>
+          <span class="photo-add-text">Añadir foto</span>
+        </label>
+      </div>`;
+  }
+
+  let followUpHTML = '';
+  if(f.followUp && f.followUp.showWhen.includes(val)){
+    const fu = f.followUp;
+    const fuVal = data[fu.key];
+    let fuInner = '';
+    if(fu.type === 'textarea'){
+      fuInner = `<textarea data-key="${fu.key}" placeholder="Escribe aquí">${fuVal?String(fuVal):''}</textarea>`;
+    } else {
+      const unit = fu.unit ? `<span class="unit-label">${fu.unit}</span>` : '';
+      fuInner = `<div class="input-with-unit"><input type="${fu.type==='number'?'number':'text'}" data-key="${fu.key}" value="${fuVal?String(fuVal).replace(/"/g,'&quot;'):''}" placeholder="Escribe aquí">${unit}</div>`;
+    }
+    followUpHTML = `<div class="followup"><label class="field-label">${fu.label}</label>${fuInner}</div>`;
+  }
+
+  const hint = f.hint ? `<div class="field-hint">${f.hint}</div>` : '';
+
+  return `<div class="field" data-field="${f.key}">
+    <label class="field-label">${f.label}${f.required?'<span class="required-mark">*</span>':''}</label>
+    ${inner}
+    ${hint}
+    ${followUpHTML}
+  </div>`;
+}
+
+function summaryText(){
+  let lines = [];
+  lines.push('FORMULARIO INICIAL — ' + (data.nombre || 'Sin nombre'));
+  lines.push('Contacto: ' + (data.contacto || '—'));
+  lines.push('');
+  visibleSections().forEach(s => {
+    lines.push('— ' + s.title.toUpperCase() + ' —');
+    visibleFields(s).forEach(f => {
+      if(f.key==='nombre' || f.key==='contacto') return;
+      if(f.type === 'photos'){
+        lines.push(f.label + ': ' + (photoFiles.length ? photoFiles.length + ' foto(s) adjuntada(s) — se comparten aparte' : '(sin fotos)'));
+        return;
+      }
+      let v = data[f.key];
+      if(Array.isArray(v)) v = v.join(', ');
+      if(v === undefined || v === null || v === '') v = '(sin responder)';
+      lines.push(f.label + ': ' + v);
+      if(f.followUp && f.followUp.showWhen.includes(data[f.key])){
+        let fv = data[f.followUp.key];
+        if(!fv) fv = '(sin responder)';
+        lines.push('  ↳ ' + f.followUp.label + ': ' + fv);
+      }
+    });
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+
+/* =========================================================
+   MAIN RENDER
+   ========================================================= */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  if(currentStep === -1){
+    app.appendChild(renderCover());
+    const btnStart = document.getElementById('btnStart');
+    if(btnStart) btnStart.addEventListener('click', () => { currentStep = 0; render(); });
+    return;
+  }
+
+  const sections = visibleSections();
+
+  if(currentStep >= sections.length){
+    app.appendChild(renderOutro());
+    attachOutroHandlers();
+    return;
+  }
+
+  const section = sections[currentStep];
+
+  const wrap = el(`<div></div>`);
+
+  // progress
+  const pct = Math.round(((currentStep) / sections.length) * 100);
+  const progress = el(`
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Paso ${currentStep+1} de ${sections.length}</span><span class="step-name">${section.title}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+  `);
+  wrap.appendChild(progress);
+
+  const content = el(`<div class="content"></div>`);
+  const heading = el(`
+    <div>
+      <div class="eyebrow">${section.eyebrow}</div>
+      <h2 class="section-title">${section.title}</h2>
+      ${section.desc ? `<p class="section-desc">${section.desc}</p>` : '<div style="height:6px"></div>'}
+      ${section.id==='mujer' ? '<div class="womansection-badge">Esta sección es opcional y confidencial</div>' : ''}
+    </div>
+  `);
+  content.appendChild(heading);
+
+  visibleFields(section).forEach(f => {
+    content.appendChild(el(fieldHTML(f)));
+  });
+
+  wrap.appendChild(content);
+
+  // nav
+  const isFirst = currentStep === 0;
+  const nav = el(`
+    <div class="nav-bar">
+      <div class="nav-inner">
+        ${isFirst ? '' : '<button class="btn btn-secondary" id="btnBack">Atrás</button>'}
+        <button class="btn btn-primary" id="btnNext">${currentStep === sections.length-1 ? 'Revisar y enviar' : 'Siguiente'}</button>
+      </div>
+    </div>
+  `);
+  wrap.appendChild(nav);
+
+  app.appendChild(wrap);
+  window.scrollTo(0,0);
+
+  attachHandlers(section);
+}
+
+function attachHandlers(section){
+  // text/number/textarea inputs
+  document.querySelectorAll('input[data-key], textarea[data-key]').forEach(elm => {
+    elm.addEventListener('input', (e) => {
+      data[elm.dataset.key] = e.target.value;
+    });
+  });
+
+  // photo picker
+  const photoInput = document.getElementById('photoInput');
+  if(photoInput){
+    photoInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
+      files.forEach(file => {
+        photoFiles.push({ file, previewUrl: URL.createObjectURL(file) });
+      });
+      render();
+    });
+  }
+  document.querySelectorAll('.photo-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const idx = parseInt(btn.dataset.index, 10);
+      URL.revokeObjectURL(photoFiles[idx].previewUrl);
+      photoFiles.splice(idx, 1);
+      render();
+    });
+  });
+
+  // radio / yesno chip rows
+  document.querySelectorAll('.chip-row[data-type="radio"]').forEach(row => {
+    row.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if(!chip) return;
+      const key = row.dataset.key;
+      data[key] = chip.dataset.value;
+      render();
+    });
+  });
+
+  // multiselect chip rows
+  document.querySelectorAll('.chip-row[data-type="multi"]').forEach(row => {
+    row.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if(!chip) return;
+      const key = row.dataset.key;
+      const val = chip.dataset.value;
+      let arr = Array.isArray(data[key]) ? data[key].slice() : [];
+      if(arr.includes(val)){
+        arr = arr.filter(v => v !== val);
+      } else {
+        arr.push(val);
+      }
+      data[key] = arr;
+      render();
+    });
+  });
+
+  // scale rows
+  document.querySelectorAll('.scale-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      const btn = e.target.closest('.scale-btn');
+      if(!btn) return;
+      const key = row.dataset.key;
+      data[key] = parseInt(btn.dataset.value, 10);
+      render();
+    });
+  });
+
+  document.querySelectorAll('.chip, .scale-btn').forEach(elm => {
+    elm.setAttribute('tabindex', '0');
+    elm.setAttribute('role', 'button');
+    elm.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        elm.click();
+      }
+    });
+  });
+
+  const back = document.getElementById('btnBack');
+  if(back) back.addEventListener('click', () => { currentStep--; render(); });
+
+  const next = document.getElementById('btnNext');
+  if(next) next.addEventListener('click', () => {
+    // simple required check
+    const missing = visibleFields(section).filter(f => f.required && !data[f.key]);
+    if(missing.length){
+      alert('Por favor, completa: ' + missing.map(f=>f.label).join(', '));
+      return;
+    }
+    currentStep++;
+    render();
+  });
+}
+
+function renderCover(){
+  return el(`
+    <div class="cover">
+      <div class="eyebrow">Asesoría EB</div>
+      <h1>Formulario <span class="accent">inicial</span></h1>
+      <p class="lede">Antes de diseñar tu plan de entrenamiento y nutrición, necesito conocerte bien. Tardarás unos 8-10 minutos — casi todo son preguntas para marcar, no para escribir.</p>
+      <div class="info-card">
+        <div class="icon">📱</div>
+        <div class="txt"><b>100% desde el móvil.</b> No hace falta descargar nada ni tener lector de PDF.</div>
+      </div>
+      <div class="info-card">
+        <div class="icon">🔒</div>
+        <div class="txt"><b>Tus respuestas no se guardan en ningún servidor.</b> Al terminar, tú decides cómo enviármelas (WhatsApp, email o copiando el resumen).</div>
+      </div>
+      <div class="info-card">
+        <div class="icon">✏️</div>
+        <div class="txt">Puedes dejar en blanco cualquier pregunta que prefieras responder más adelante en persona.</div>
+      </div>
+      <div class="nav-bar" style="position:static;padding:24px 0 0 0;background:none;">
+        <div class="nav-inner" style="padding:0;">
+          <button class="btn btn-primary" id="btnStart">Empezar</button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function renderOutro(){
+  const text = summaryText();
+  const hasPhotos = photoFiles.length > 0;
+  const photosBlock = hasPhotos ? `
+      <div class="field" style="margin-bottom:18px;">
+        <label class="field-label">Tus fotos (${photoFiles.length})</label>
+        <div class="photo-grid">
+          ${photoFiles.map(p => `<div class="photo-thumb"><img src="${p.previewUrl}"></div>`).join('')}
+        </div>
+        <button class="btn btn-primary" id="btnSharePhotos" style="width:100%;margin-top:14px;">📷 Compartir fotos por WhatsApp</button>
+        <div class="share-photos-note" id="photoShareNote"></div>
+      </div>` : '';
+
+  const wrap = el(`
+    <div class="cover" style="justify-content:flex-start;padding-top:56px;">
+      <div class="eyebrow">¡Ya casi está!</div>
+      <h1 style="font-size:28px;">Revisa y envíame<br><span class="accent">tus respuestas</span></h1>
+      <p class="lede" style="margin-bottom:18px;">Elige la forma más cómoda para hacérmelas llegar. No se envía nada automáticamente.</p>
+      ${photosBlock}
+      <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <button class="btn btn-primary" id="btnCopy">📋 Copiar resumen</button>
+        <a class="btn btn-secondary link-btn" id="btnWhatsapp" href="#" style="flex:1;">💬 Enviar por WhatsApp</a>
+        <a class="btn btn-secondary link-btn" id="btnEmail" href="#" style="flex:1;">✉️ Enviar por email</a>
+      </div>
+      <div class="summary-box" id="summaryBox"></div>
+      <div style="height:16px"></div>
+      <button class="btn btn-secondary" id="btnEdit" style="width:100%;">Volver atrás y corregir algo</button>
+    </div>
+    <div class="toast" id="toast">Copiado al portapapeles</div>
+  `);
+
+  return wrap;
+}
+
+// EDITA ESTOS DOS VALORES CON TU EMAIL Y TELÉFONO REALES:
+const TU_EMAIL = 'eeddwwiinn10@gmail.com';
+const TU_TELEFONO = '34640648420'; // formato internacional sin '+' ni espacios
+
+function attachOutroHandlers(){
+  const text = summaryText();
+  document.getElementById('summaryBox').textContent = text;
+
+  document.getElementById('btnCopy').addEventListener('click', () => {
+    navigator.clipboard.writeText(text).then(() => {
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 2200);
+    }).catch(() => {
+      alert('No se pudo copiar automáticamente. Selecciona el texto de abajo manualmente.');
+    });
+  });
+
+  document.getElementById('btnWhatsapp').href =
+    'https://wa.me/' + TU_TELEFONO + '?text=' + encodeURIComponent(text);
+  document.getElementById('btnEmail').href =
+    'mailto:' + TU_EMAIL + '?subject=' + encodeURIComponent('Formulario inicial - ' + (data.nombre||'')) +
+    '&body=' + encodeURIComponent(text);
+
+  const sharePhotosBtn = document.getElementById('btnSharePhotos');
+  if(sharePhotosBtn){
+    const files = photoFiles.map(p => p.file);
+    const canShareFiles = navigator.canShare && navigator.canShare({ files });
+    if(!canShareFiles){
+      sharePhotosBtn.disabled = true;
+      sharePhotosBtn.textContent = '📷 Compartir fotos (no disponible en este navegador)';
+      document.getElementById('photoShareNote').textContent =
+        'Tu navegador no permite compartir fotos directamente. Ábrelo desde el móvil con Safari o Chrome, o envíame las fotos a mano por WhatsApp.';
+    } else {
+      sharePhotosBtn.addEventListener('click', async () => {
+        try{
+          await navigator.share({
+            files,
+            title: 'Fotos iniciales - ' + (data.nombre || ''),
+            text: 'Fotos iniciales de ' + (data.nombre || '')
+          });
+        } catch(err){
+          // usuario canceló o falló el share; no hacemos nada ruidoso
+        }
+      });
+    }
+  }
+
+  document.getElementById('btnEdit').addEventListener('click', () => {
+    currentStep = visibleSections().length - 1;
+    render();
+  });
+}
+
+render();
+})();
+</script>
+</body>
+</html>
