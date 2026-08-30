@@ -977,13 +977,11 @@ function renderOutro(){
   const text = summaryText();
   const hasPhotos = photoFiles.length > 0;
   const photosBlock = hasPhotos ? `
-      <div class="field" style="margin-bottom:18px;">
+      <div class="field" style="margin-bottom:8px;">
         <label class="field-label">Tus fotos (${photoFiles.length})</label>
         <div class="photo-grid">
           ${photoFiles.map(p => `<div class="photo-thumb"><img src="${p.previewUrl}"></div>`).join('')}
         </div>
-        <button class="btn btn-primary" id="btnSharePhotos" style="width:100%;margin-top:14px;">📷 Compartir fotos por WhatsApp</button>
-        <div class="share-photos-note" id="photoShareNote"></div>
       </div>` : '';
 
   const wrap = el(`
@@ -993,10 +991,12 @@ function renderOutro(){
       <p class="lede" style="margin-bottom:18px;">Elige la forma más cómoda para hacérmelas llegar. No se envía nada automáticamente.</p>
       ${photosBlock}
       <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:8px;">
-        <button class="btn btn-primary" id="btnCopyLink">🔗 Copiar enlace con tus respuestas</button>
-        <a class="btn btn-secondary link-btn" id="btnWhatsappLink" href="#" style="flex:1;">💬 Enviar enlace por WhatsApp</a>
+        <button class="btn btn-primary" id="btnSendAll">💬 Enviar todo por WhatsApp</button>
+        <div class="share-photos-note" id="sendAllNote"></div>
       </div>
-      <div class="field-hint" style="margin-bottom:20px;">El enlace abre tus respuestas ya rellenas, con el mismo diseño del formulario — nadie más puede verlas si no tiene el enlace.</div>
+      <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:8px;margin-top:6px;">
+        <button class="btn btn-secondary" id="btnCopyLink">🔗 Copiar enlace con tus respuestas</button>
+      </div>
       <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:20px;">
         <button class="btn btn-secondary" id="btnCopy">📋 Copiar como texto</button>
         <a class="btn btn-secondary link-btn" id="btnEmail" href="#" style="flex:1;">✉️ Enviar por email</a>
@@ -1031,9 +1031,6 @@ function attachOutroHandlers(){
     });
   });
 
-  document.getElementById('btnWhatsappLink').href =
-    'https://wa.me/' + TU_TELEFONO + '?text=' + encodeURIComponent('Aquí tienes mi formulario inicial completado: ' + link);
-
   document.getElementById('btnCopy').addEventListener('click', () => {
     navigator.clipboard.writeText(text).then(() => {
       const t = document.getElementById('toast');
@@ -1048,29 +1045,34 @@ function attachOutroHandlers(){
     'mailto:' + TU_EMAIL + '?subject=' + encodeURIComponent('Formulario inicial - ' + (data.nombre||'')) +
     '&body=' + encodeURIComponent(text);
 
-  const sharePhotosBtn = document.getElementById('btnSharePhotos');
-  if(sharePhotosBtn){
-    const files = photoFiles.map(p => p.file);
-    const canShareFiles = navigator.canShare && navigator.canShare({ files });
-    if(!canShareFiles){
-      sharePhotosBtn.disabled = true;
-      sharePhotosBtn.textContent = '📷 Compartir fotos (no disponible en este navegador)';
-      document.getElementById('photoShareNote').textContent =
-        'Tu navegador no permite compartir fotos directamente. Ábrelo desde el móvil con Safari o Chrome, o envíame las fotos a mano por WhatsApp.';
-    } else {
-      sharePhotosBtn.addEventListener('click', async () => {
-        try{
-          await navigator.share({
-            files,
-            title: 'Fotos iniciales - ' + (data.nombre || ''),
-            text: 'Fotos iniciales de ' + (data.nombre || '')
-          });
-        } catch(err){
-          // usuario canceló o falló el share; no hacemos nada ruidoso
-        }
-      });
-    }
+  // ---- Envío unificado: enlace + fotos, todo en un único WhatsApp ----
+  const sendAllBtn = document.getElementById('btnSendAll');
+  const noteEl = document.getElementById('sendAllNote');
+  const files = photoFiles.map(p => p.file);
+  const messageText = 'Aquí tienes mi formulario inicial completado: ' + link;
+  const waFallbackHref = 'https://wa.me/' + TU_TELEFONO + '?text=' + encodeURIComponent(messageText);
+  const canShareFiles = files.length > 0 && !!(navigator.canShare && navigator.canShare({ files }));
+
+  if(files.length > 0){
+    noteEl.textContent = canShareFiles
+      ? 'Se abrirá el menú para compartir con tus fotos y el enlace. Elige WhatsApp y listo.'
+      : 'Tu navegador no permite adjuntar fotos aquí: se abrirá WhatsApp con el enlace, y las fotos guárdalas y adjúntalas a mano en el mismo chat.';
+  } else {
+    noteEl.textContent = '';
   }
+
+  sendAllBtn.addEventListener('click', async () => {
+    if(canShareFiles){
+      try{
+        await navigator.share({ files, text: messageText });
+        return;
+      } catch(err){
+        if(err && err.name === 'AbortError') return; // el usuario cerró el menú
+        // si falla el share nativo, seguimos con el fallback de abajo
+      }
+    }
+    window.open(waFallbackHref, '_blank');
+  });
 
   document.getElementById('btnEdit').addEventListener('click', () => {
     currentStep = visibleSections().length - 1;
