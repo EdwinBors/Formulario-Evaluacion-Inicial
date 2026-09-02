@@ -782,14 +782,14 @@ function summaryText(){
 /* =========================================================
    MAIN RENDER
    ========================================================= */
-function render(){
+function render(scrollTop){
   const app = document.getElementById('app');
   app.innerHTML = '';
 
   if(currentStep === -1){
     app.appendChild(renderCover());
     const btnStart = document.getElementById('btnStart');
-    if(btnStart) btnStart.addEventListener('click', () => { currentStep = 0; render(); });
+    if(btnStart) btnStart.addEventListener('click', () => { currentStep = 0; render(true); });
     return;
   }
 
@@ -845,7 +845,7 @@ function render(){
   wrap.appendChild(nav);
 
   app.appendChild(wrap);
-  window.scrollTo(0,0);
+  if(scrollTop) window.scrollTo(0,0);
 
   attachHandlers(section);
 }
@@ -931,7 +931,7 @@ function attachHandlers(section){
   });
 
   const back = document.getElementById('btnBack');
-  if(back) back.addEventListener('click', () => { currentStep--; render(); });
+  if(back) back.addEventListener('click', () => { currentStep--; render(true); });
 
   const next = document.getElementById('btnNext');
   if(next) next.addEventListener('click', () => {
@@ -942,7 +942,7 @@ function attachHandlers(section){
       return;
     }
     currentStep++;
-    render();
+    render(true);
   });
 }
 
@@ -1045,30 +1045,44 @@ function attachOutroHandlers(){
     'mailto:' + TU_EMAIL + '?subject=' + encodeURIComponent('Formulario inicial - ' + (data.nombre||'')) +
     '&body=' + encodeURIComponent(text);
 
-  // ---- Envío unificado: enlace + fotos, todo en un único WhatsApp ----
+  // ---- Envío de fotos + enlace, adaptado según el sistema operativo ----
   const sendAllBtn = document.getElementById('btnSendAll');
   const noteEl = document.getElementById('sendAllNote');
   const files = photoFiles.map(p => p.file);
   const messageText = 'Aquí tienes mi formulario inicial completado: ' + link;
   const waFallbackHref = 'https://wa.me/' + TU_TELEFONO + '?text=' + encodeURIComponent(messageText);
   const canShareFiles = files.length > 0 && !!(navigator.canShare && navigator.canShare({ files }));
+  const os = detectOS();
 
   if(files.length > 0){
-    noteEl.textContent = canShareFiles
-      ? 'Se abrirá el menú para compartir tus fotos junto al enlace. Si falla o WhatsApp no aparece, se abrirá igualmente con el enlace — solo tendrás que adjuntar las fotos a mano en el chat.'
-      : 'Tu navegador no permite adjuntar fotos aquí: se abrirá WhatsApp con el enlace, y las fotos guárdalas y adjúntalas a mano en el mismo chat.';
+    if(!canShareFiles){
+      noteEl.textContent = 'Tu navegador no permite adjuntar fotos aquí: se abrirá WhatsApp con el enlace, y las fotos guárdalas y adjúntalas a mano en el mismo chat.';
+    } else if(os === 'ios'){
+      noteEl.textContent = 'En iPhone esto se envía en dos mensajes: primero se abrirá el menú para tus fotos (elige WhatsApp) y, justo después, se abrirá WhatsApp otra vez con el enlace — tendrás que enviar los dos.';
+    } else {
+      noteEl.textContent = 'Se abrirá el menú para enviarlo todo junto: tus fotos y el enlace en un solo mensaje. Elige WhatsApp.';
+    }
   } else {
     noteEl.textContent = '';
   }
 
   sendAllBtn.addEventListener('click', async () => {
     if(canShareFiles){
+      if(os === 'ios'){
+        // En iPhone, WhatsApp trata el texto como "pie de foto" (con límite de caracteres)
+        // y corta el enlace a la mitad si va junto a las fotos. Se envían por separado.
+        try{ await navigator.share({ files }); }
+        catch(err){ /* seguimos igualmente hacia el enlace */ }
+        location.href = waFallbackHref;
+        return;
+      }
+      // Android y el resto: en un único envío suele funcionar bien
       try{
         await navigator.share({ files, text: messageText });
         return;
       } catch(err){
         if(err && err.name === 'AbortError') return; // el usuario cerró el menú
-        // si falla el share nativo, seguimos con el fallback de abajo
+        // si falla, seguimos con el enlace suelto como alternativa
       }
     }
     location.href = waFallbackHref;
@@ -1076,13 +1090,20 @@ function attachOutroHandlers(){
 
   document.getElementById('btnEdit').addEventListener('click', () => {
     currentStep = visibleSections().length - 1;
-    render();
+    render(true);
   });
 }
 
 /* =========================================================
    RESULTS VIEW (read-only, reached via a shareable link)
    ========================================================= */
+function detectOS(){
+  const ua = navigator.userAgent || navigator.vendor || '';
+  if(/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
+  if(/android/i.test(ua)) return 'android';
+  return 'other';
+}
+
 function buildResultsLink(){
   const payload = Object.assign({}, data, { _fecha: new Date().toLocaleString('es-ES') });
   const encoded = encodeURIComponent(JSON.stringify(payload));
@@ -1152,15 +1173,32 @@ function getResultsFromHash(){
   const h = location.hash;
   if(h && h.indexOf('#r=') === 0){
     try{
-      return JSON.parse(decodeURIComponent(h.slice(3)));
-    }catch(e){ return null; }
+      return { ok:true, data: JSON.parse(decodeURIComponent(h.slice(3))) };
+    }catch(e){ return { ok:false }; }
   }
   return null;
 }
 
+function renderBrokenLink(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  app.appendChild(el(`
+    <div class="cover">
+      <div class="eyebrow">Asesoría EB</div>
+      <h1 style="font-size:24px;">Este enlace parece<br><span class="accent">incompleto</span></h1>
+      <p class="lede">El enlace que has abierto se ha cortado o dañado por el camino (suele pasar si va pegado como pie de foto en WhatsApp). Pide que te lo reenvíen como mensaje de texto normal, o que usen el botón "Copiar enlace" y lo peguen directamente.</p>
+      <div class="nav-inner" style="padding:0;">
+        <a class="btn btn-primary link-btn" href="${location.origin + location.pathname}">Ir al formulario en blanco</a>
+      </div>
+    </div>
+  `));
+}
+
 const incomingResults = getResultsFromHash();
-if(incomingResults){
-  renderResultsView(incomingResults);
+if(incomingResults && incomingResults.ok){
+  renderResultsView(incomingResults.data);
+} else if(incomingResults && !incomingResults.ok){
+  renderBrokenLink();
 } else {
   render();
 }
