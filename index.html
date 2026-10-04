@@ -591,7 +591,7 @@ const SECTIONS = [
     desc: '',
     showIf: (d) => d.sexo === 'Mujer',
     fields: [
-      { key:'fecha_ultima_regla', label:'Fecha de la última regla', type:'text' },
+      { key:'fecha_ultimo_periodo', label:'Fecha de inicio de tu último periodo', type:'text' },
       { key:'ciclo_regularidad', label:'Frecuencia y regularidad del ciclo menstrual', type:'radio',
         options:['Regular','Irregular','Ausente (amenorrea)','Prefiero no decirlo'] },
       { key:'dolor_menstrual', label:'¿Sufres dolor durante la menstruación?', type:'yesno' },
@@ -1283,5 +1283,4 @@ if(incomingResults && incomingResults.ok){
 }
 })();
 </script>
-</body>
-</html>
+</
