@@ -439,6 +439,17 @@
     line-height:1.2;
     padding:0 4px;
   }
+  .activity-list{ display:flex; flex-direction:column; gap:10px; }
+  .activity-row{ display:flex; align-items:center; gap:8px; }
+  .activity-row-fields{ display:flex; gap:8px; flex:1; }
+  .activity-row-fields input[type="text"]{ flex:1.4; }
+  .activity-hours{ flex:1; }
+  .activity-hours input{ padding-right:48px; }
+  .activity-remove{
+    width:36px; height:36px; flex:0 0 36px;
+    border-radius:10px; border:1px solid var(--border); background:var(--card);
+    color:var(--gray); font-size:14px; cursor:pointer;
+  }
   .share-photos-note{
     font-size:12.5px;
     color:var(--gray-dim);
@@ -513,8 +524,9 @@ const SECTIONS = [
     fields: [
       { key:'deporte_pasado', label:'¿Has practicado algún deporte antes?', type:'yesno',
         followUp:{ key:'deporte_pasado_detalle', label:'¿Cuál y durante cuánto tiempo?', type:'text', showWhen:['Sí'] } },
-      { key:'deporte_actual', label:'¿Actualmente haces alguna actividad deportiva?', type:'yesno',
-        followUp:{ key:'deporte_actual_horas', label:'¿Cuántas horas por semana?', type:'number', unit:'h/semana', showWhen:['Sí'] } },
+      { key:'deporte_actual', label:'¿Actualmente haces alguna actividad deportiva?', type:'yesno' },
+      { key:'actividades_actuales', label:'¿Qué actividad practicas y cuántas horas a la semana?', type:'activitylist',
+        showIf:(d)=>d.deporte_actual==='Sí' },
       { key:'pasos_dia', label:'¿Cuántos pasos haces aproximadamente al día?', type:'radio',
         options:['Menos de 3.000','3.000 - 6.000','6.000 - 10.000','Más de 10.000','No lo sé'] },
       { key:'condicion_fisica', label:'¿Cómo valorarías tu condición física actual?', type:'scale', min:1, max:10, capLow:'Muy baja', capHigh:'Excelente' },
@@ -575,14 +587,17 @@ const SECTIONS = [
   {
     id: 'mujer',
     eyebrow: 'Solo para adaptar mejor tu plan',
-    title: 'En caso de las mujeres',
+    title: 'Ciclo menstrual',
     desc: '',
     showIf: (d) => d.sexo === 'Mujer',
     fields: [
+      { key:'fecha_ultima_regla', label:'Fecha de la última regla', type:'text' },
       { key:'ciclo_regularidad', label:'Frecuencia y regularidad del ciclo menstrual', type:'radio',
         options:['Regular','Irregular','Ausente (amenorrea)','Prefiero no decirlo'] },
       { key:'dolor_menstrual', label:'¿Sufres dolor durante la menstruación?', type:'yesno' },
       { key:'medicacion_sintomas', label:'¿Tomas medicación para los síntomas?', type:'yesno' },
+      { key:'energia_segun_ciclo', label:'¿Notas que tu energía o rendimiento cambia según la fase del ciclo?', type:'radio',
+        options:['Sí, mucho','Un poco','No lo noto','No lo he observado'] },
       { key:'circunstancia_ciclo', label:'¿Hay alguna circunstancia relacionada con el ciclo que deba tenerse en cuenta para adaptar el entrenamiento?', type:'textarea' },
     ]
   },
@@ -725,6 +740,23 @@ function fieldHTML(f){
           <span class="photo-add-text">Añadir foto</span>
         </label>
       </div>`;
+  } else if(f.type === 'activitylist'){
+    const rows = Array.isArray(val) && val.length ? val : [{ actividad:'', horas:'' }];
+    inner = `<div class="activity-list" data-key="${f.key}">` +
+      rows.map((row, i) => `
+        <div class="activity-row" data-idx="${i}">
+          <div class="activity-row-fields">
+            <input type="text" class="activity-input" data-field="actividad" placeholder="Actividad (p. ej. pádel)" value="${(row.actividad||'').replace(/"/g,'&quot;')}">
+            <div class="input-with-unit activity-hours">
+              <input type="number" class="activity-input" data-field="horas" placeholder="Horas" value="${row.horas||''}" inputmode="decimal">
+              <span class="unit-label">h/sem</span>
+            </div>
+          </div>
+          ${rows.length > 1 ? `<button type="button" class="activity-remove" data-idx="${i}">✕</button>` : ''}
+        </div>
+      `).join('') +
+      `<button type="button" class="chip" id="activityAddBtn" style="margin-top:4px;">＋ Añadir otra actividad</button>
+      </div>`;
   }
 
   let followUpHTML = '';
@@ -762,6 +794,13 @@ function summaryText(){
       if(f.key==='nombre' || f.key==='contacto') return;
       if(f.type === 'photos'){
         lines.push(f.label + ': ' + (photoFiles.length ? photoFiles.length + ' foto(s) adjuntada(s) — se comparten aparte' : '(sin fotos)'));
+        return;
+      }
+      if(f.type === 'activitylist'){
+        const rows = (Array.isArray(data[f.key]) ? data[f.key] : []).filter(r => r.actividad || r.horas);
+        if(!rows.length){ lines.push(f.label + ': (sin responder)'); return; }
+        lines.push(f.label + ':');
+        rows.forEach(r => lines.push('  - ' + (r.actividad || 'Actividad sin nombre') + ': ' + (r.horas || '?') + ' h/semana'));
         return;
       }
       let v = data[f.key];
@@ -858,22 +897,57 @@ function attachHandlers(section){
     });
   });
 
+  // activity list (actividades_actuales): inputs, add, remove
+  document.querySelectorAll('.activity-list').forEach(list => {
+    const key = list.dataset.key;
+    if(!Array.isArray(data[key]) || !data[key].length) data[key] = [{ actividad:'', horas:'' }];
+
+    list.querySelectorAll('.activity-row').forEach(row => {
+      const idx = parseInt(row.dataset.idx, 10);
+      row.querySelectorAll('.activity-input').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          data[key][idx][inp.dataset.field] = e.target.value;
+        });
+      });
+      const removeBtn = row.querySelector('.activity-remove');
+      if(removeBtn){
+        removeBtn.addEventListener('click', () => {
+          data[key].splice(idx, 1);
+          render();
+        });
+      }
+    });
+
+    const addBtn = list.querySelector('#activityAddBtn');
+    if(addBtn){
+      addBtn.addEventListener('click', () => {
+        data[key].push({ actividad:'', horas:'' });
+        render();
+      });
+    }
+  });
+
   // photo picker
   const photoInput = document.getElementById('photoInput');
   if(photoInput){
     photoInput.addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []);
       files.forEach(file => {
-        photoFiles.push({ file, previewUrl: URL.createObjectURL(file) });
+        // Usamos un data URL (en vez de blob:) para que la miniatura no se rompa
+        // si el móvil recarga la página en segundo plano al volver de la cámara/galería.
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          photoFiles.push({ file, previewUrl: ev.target.result });
+          render();
+        };
+        reader.readAsDataURL(file);
       });
-      render();
     });
   }
   document.querySelectorAll('.photo-remove').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const idx = parseInt(btn.dataset.index, 10);
-      URL.revokeObjectURL(photoFiles[idx].previewUrl);
       photoFiles.splice(idx, 1);
       render();
     });
@@ -1139,7 +1213,12 @@ function renderResultsView(resultData){
     s.fields.filter(f => !f.showIf || f.showIf(resultData)).forEach(f => {
       if(f.type === 'photos') return; // las fotos se comparten aparte
       let v = resultData[f.key];
-      if(Array.isArray(v)) v = v.join(', ');
+      if(f.type === 'activitylist'){
+        const rows = (Array.isArray(v) ? v : []).filter(r => r.actividad || r.horas);
+        v = rows.length ? rows.map(r => (r.actividad || 'Actividad sin nombre') + ' — ' + (r.horas || '?') + ' h/semana').join('<br>') : '—';
+      } else if(Array.isArray(v)){
+        v = v.join(', ');
+      }
       if(v === undefined || v === null || v === '') v = '—';
       const row = el(`
         <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
