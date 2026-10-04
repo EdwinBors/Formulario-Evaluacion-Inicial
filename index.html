@@ -1073,7 +1073,6 @@ function renderOutro(){
       <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:8px;">
         <button class="btn btn-primary" id="btnSendAll">💬 Enviar por WhatsApp</button>
         <div class="share-photos-note" id="sendAllNote"></div>
-        ${hasPhotos ? '<button class="btn btn-secondary" id="btnSharePhotosOnly" style="margin-top:4px;">📷 Compartir solo las fotos</button>' : ''}
       </div>
       <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:8px;margin-top:6px;">
         <button class="btn btn-secondary" id="btnCopyLink">🔗 Copiar enlace con tus respuestas</button>
@@ -1155,34 +1154,49 @@ function attachOutroHandlers(){
     'mailto:' + TU_EMAIL + '?subject=' + encodeURIComponent('Formulario inicial - ' + (data.nombre||'')) +
     '&body=' + encodeURIComponent(text);
 
-  // ---- Envío: WhatsApp directo con el enlace; las fotos van aparte (requieren menú del sistema) ----
+  // ---- Envío: sin fotos va directo a WhatsApp (sin menú); con fotos, el sistema operativo
+  // obliga a pasar por el selector de app una vez (no hay forma de evitarlo al adjuntar archivos) ----
   const sendAllBtn = document.getElementById('btnSendAll');
   const noteEl = document.getElementById('sendAllNote');
   const files = photoFiles.map(p => p.file);
   const messageText = 'Aquí tienes mi formulario inicial completado: ' + link;
   const waFallbackHref = 'https://wa.me/' + TU_TELEFONO + '?text=' + encodeURIComponent(messageText);
   const canShareFiles = files.length > 0 && !!(navigator.canShare && navigator.canShare({ files }));
+  const os = detectOS();
 
-  noteEl.textContent = files.length > 0
-    ? 'Esto abre WhatsApp con tus respuestas. Las fotos se envían aparte, con el botón de abajo.'
-    : '';
+  if(files.length > 0){
+    if(!canShareFiles){
+      noteEl.textContent = 'Tu navegador no permite adjuntar fotos aquí: se abrirá WhatsApp con el enlace, y las fotos guárdalas y adjúntalas a mano en el mismo chat.';
+    } else if(os === 'ios'){
+      noteEl.textContent = 'En iPhone esto se envía en dos mensajes: primero se abrirá el menú para tus fotos (elige WhatsApp) y, justo después, se abrirá WhatsApp otra vez con el enlace — tendrás que enviar los dos.';
+    } else {
+      noteEl.textContent = 'Como llevas fotos, el móvil te pedirá elegir la app una vez (toca WhatsApp) — es un paso del propio sistema, no se puede saltar al adjuntar archivos. Sin fotos, iría directo.';
+    }
+  } else {
+    noteEl.textContent = '';
+  }
 
-  sendAllBtn.addEventListener('click', () => {
+  sendAllBtn.addEventListener('click', async () => {
+    if(canShareFiles){
+      if(os === 'ios'){
+        // En iPhone, WhatsApp trata el texto como "pie de foto" (con límite de caracteres)
+        // y corta el enlace a la mitad si va junto a las fotos. Se envían por separado.
+        try{ await navigator.share({ files }); }
+        catch(err){ /* seguimos igualmente hacia el enlace */ }
+        location.href = waFallbackHref;
+        return;
+      }
+      // Android y el resto: en un único envío suele funcionar bien
+      try{
+        await navigator.share({ files, text: messageText });
+        return;
+      } catch(err){
+        if(err && err.name === 'AbortError') return; // el usuario cerró el menú
+        // si falla, seguimos con el enlace suelto como alternativa
+      }
+    }
     location.href = waFallbackHref;
   });
-
-  const sharePhotosBtn = document.getElementById('btnSharePhotosOnly');
-  if(sharePhotosBtn){
-    if(!canShareFiles){
-      sharePhotosBtn.disabled = true;
-      sharePhotosBtn.textContent = '📷 Compartir fotos (no disponible en este navegador)';
-    } else {
-      sharePhotosBtn.addEventListener('click', async () => {
-        try{ await navigator.share({ files }); }
-        catch(err){ /* el usuario cerró el menú o falló; no hacemos nada ruidoso */ }
-      });
-    }
-  }
 
   document.getElementById('btnEdit').addEventListener('click', () => {
     currentStep = visibleSections().length - 1;
