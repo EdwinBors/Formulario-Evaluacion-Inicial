@@ -123,6 +123,7 @@
   input[type="text"],
   input[type="number"],
   input[type="tel"],
+  input[type="date"],
   textarea,
   select{
     width:100%;
@@ -135,6 +136,9 @@
     padding:13px 14px;
     outline:none;
     transition:border-color .15s ease;
+  }
+  input[type="date"]{
+    color-scheme: dark;
   }
   input:focus, textarea:focus, select:focus{
     border-color:var(--lime);
@@ -591,7 +595,7 @@ const SECTIONS = [
     desc: '',
     showIf: (d) => d.sexo === 'Mujer',
     fields: [
-      { key:'fecha_ultimo_periodo', label:'Fecha de inicio de tu último periodo', type:'text' },
+      { key:'fecha_ultimo_periodo', label:'Fecha de inicio de tu último periodo', type:'date' },
       { key:'ciclo_regularidad', label:'Frecuencia y regularidad del ciclo menstrual', type:'radio',
         options:['Regular','Irregular','Ausente (amenorrea)','Prefiero no decirlo'] },
       { key:'dolor_menstrual', label:'¿Sufres dolor durante la menstruación?', type:'yesno' },
@@ -702,6 +706,8 @@ function fieldHTML(f){
       <input type="${f.type==='number'?'number':'text'}" data-key="${f.key}" value="${val?String(val).replace(/"/g,'&quot;'):''}" placeholder="Escribe aquí" inputmode="${f.type==='number'?'decimal':'text'}">
       ${unit}
     </div>`;
+  } else if(f.type === 'date'){
+    inner = `<input type="date" data-key="${f.key}" value="${val?String(val):''}">`;
   } else if(f.type === 'textarea'){
     inner = `<textarea data-key="${f.key}" placeholder="Escribe aquí">${val?String(val):''}</textarea>`;
   } else if(f.type === 'radio'){
@@ -1065,8 +1071,9 @@ function renderOutro(){
       <p class="lede" style="margin-bottom:18px;">Elige la forma más cómoda para hacérmelas llegar. No se envía nada automáticamente.</p>
       ${photosBlock}
       <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:8px;">
-        <button class="btn btn-primary" id="btnSendAll">💬 Enviar todo por WhatsApp</button>
+        <button class="btn btn-primary" id="btnSendAll">💬 Enviar por WhatsApp</button>
         <div class="share-photos-note" id="sendAllNote"></div>
+        ${hasPhotos ? '<button class="btn btn-secondary" id="btnSharePhotosOnly" style="margin-top:4px;">📷 Compartir solo las fotos</button>' : ''}
       </div>
       <div class="nav-inner" style="padding:0;flex-direction:column;gap:10px;margin-bottom:8px;margin-top:6px;">
         <button class="btn btn-secondary" id="btnCopyLink">🔗 Copiar enlace con tus respuestas</button>
@@ -1078,8 +1085,8 @@ function renderOutro(){
       <div class="summary-box" id="summaryBox"></div>
       <div style="height:16px"></div>
       <button class="btn btn-secondary" id="btnEdit" style="width:100%;">Volver atrás y corregir algo</button>
+      <div class="toast" id="toast">Copiado al portapapeles</div>
     </div>
-    <div class="toast" id="toast">Copiado al portapapeles</div>
   `);
 
   return wrap;
@@ -1089,29 +1096,58 @@ function renderOutro(){
 const TU_EMAIL = 'eeddwwiinn10@gmail.com';
 const TU_TELEFONO = '34640648420'; // formato internacional sin '+' ni espacios
 
+function copyToClipboard(text){
+  // Intento 1: API moderna del portapapeles
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text).catch(() => copyLegacy(text));
+  }
+  return copyLegacy(text);
+}
+
+function copyLegacy(text){
+  // Intento 2: método clásico, funciona en más navegadores/webviews (ej. WhatsApp in-app)
+  return new Promise((resolve, reject) => {
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.top = '-9999px';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('execCommand falló'));
+    }catch(err){
+      reject(err);
+    }
+  });
+}
+
 function attachOutroHandlers(){
   const text = summaryText();
   const link = buildResultsLink();
   document.getElementById('summaryBox').textContent = text;
 
   document.getElementById('btnCopyLink').addEventListener('click', () => {
-    navigator.clipboard.writeText(link).then(() => {
+    copyToClipboard(link).then(() => {
       const t = document.getElementById('toast');
       t.textContent = 'Enlace copiado';
       t.classList.add('show');
       setTimeout(()=>{ t.classList.remove('show'); t.textContent = 'Copiado al portapapeles'; }, 2200);
     }).catch(() => {
-      alert('No se pudo copiar automáticamente. Enlace:\n\n' + link);
+      alert('No se pudo copiar automáticamente. Mantén pulsado el texto de abajo para copiarlo a mano, o usa el enlace:\n\n' + link);
     });
   });
 
   document.getElementById('btnCopy').addEventListener('click', () => {
-    navigator.clipboard.writeText(text).then(() => {
+    copyToClipboard(text).then(() => {
       const t = document.getElementById('toast');
       t.classList.add('show');
       setTimeout(()=>t.classList.remove('show'), 2200);
     }).catch(() => {
-      alert('No se pudo copiar automáticamente. Selecciona el texto de abajo manualmente.');
+      alert('No se pudo copiar automáticamente. Mantén pulsado el texto de abajo (el resumen) para copiarlo a mano.');
     });
   });
 
@@ -1119,48 +1155,34 @@ function attachOutroHandlers(){
     'mailto:' + TU_EMAIL + '?subject=' + encodeURIComponent('Formulario inicial - ' + (data.nombre||'')) +
     '&body=' + encodeURIComponent(text);
 
-  // ---- Envío de fotos + enlace, adaptado según el sistema operativo ----
+  // ---- Envío: WhatsApp directo con el enlace; las fotos van aparte (requieren menú del sistema) ----
   const sendAllBtn = document.getElementById('btnSendAll');
   const noteEl = document.getElementById('sendAllNote');
   const files = photoFiles.map(p => p.file);
   const messageText = 'Aquí tienes mi formulario inicial completado: ' + link;
   const waFallbackHref = 'https://wa.me/' + TU_TELEFONO + '?text=' + encodeURIComponent(messageText);
   const canShareFiles = files.length > 0 && !!(navigator.canShare && navigator.canShare({ files }));
-  const os = detectOS();
 
-  if(files.length > 0){
-    if(!canShareFiles){
-      noteEl.textContent = 'Tu navegador no permite adjuntar fotos aquí: se abrirá WhatsApp con el enlace, y las fotos guárdalas y adjúntalas a mano en el mismo chat.';
-    } else if(os === 'ios'){
-      noteEl.textContent = 'En iPhone esto se envía en dos mensajes: primero se abrirá el menú para tus fotos (elige WhatsApp) y, justo después, se abrirá WhatsApp otra vez con el enlace — tendrás que enviar los dos.';
-    } else {
-      noteEl.textContent = 'Se abrirá el menú para enviarlo todo junto: tus fotos y el enlace en un solo mensaje. Elige WhatsApp.';
-    }
-  } else {
-    noteEl.textContent = '';
-  }
+  noteEl.textContent = files.length > 0
+    ? 'Esto abre WhatsApp con tus respuestas. Las fotos se envían aparte, con el botón de abajo.'
+    : '';
 
-  sendAllBtn.addEventListener('click', async () => {
-    if(canShareFiles){
-      if(os === 'ios'){
-        // En iPhone, WhatsApp trata el texto como "pie de foto" (con límite de caracteres)
-        // y corta el enlace a la mitad si va junto a las fotos. Se envían por separado.
-        try{ await navigator.share({ files }); }
-        catch(err){ /* seguimos igualmente hacia el enlace */ }
-        location.href = waFallbackHref;
-        return;
-      }
-      // Android y el resto: en un único envío suele funcionar bien
-      try{
-        await navigator.share({ files, text: messageText });
-        return;
-      } catch(err){
-        if(err && err.name === 'AbortError') return; // el usuario cerró el menú
-        // si falla, seguimos con el enlace suelto como alternativa
-      }
-    }
+  sendAllBtn.addEventListener('click', () => {
     location.href = waFallbackHref;
   });
+
+  const sharePhotosBtn = document.getElementById('btnSharePhotosOnly');
+  if(sharePhotosBtn){
+    if(!canShareFiles){
+      sharePhotosBtn.disabled = true;
+      sharePhotosBtn.textContent = '📷 Compartir fotos (no disponible en este navegador)';
+    } else {
+      sharePhotosBtn.addEventListener('click', async () => {
+        try{ await navigator.share({ files }); }
+        catch(err){ /* el usuario cerró el menú o falló; no hacemos nada ruidoso */ }
+      });
+    }
+  }
 
   document.getElementById('btnEdit').addEventListener('click', () => {
     currentStep = visibleSections().length - 1;
@@ -1283,4 +1305,5 @@ if(incomingResults && incomingResults.ok){
 }
 })();
 </script>
-</
+</body>
+</html>
